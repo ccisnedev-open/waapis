@@ -81,12 +81,12 @@ Cada step sigue el ciclo Red-Green-Refactor. Al completar cada sub-paso, marcar 
 
 ### Step 2: Simulator state + JSON persistence
 
-- [ ] Write failing test: `src/__tests__/state/simulator-state.test.ts` — verifica que `SimulatorState` almacena/recupera `lastInboundAt` y `mediaStore`, y que `persistence.ts` lee/escribe `state.json`
-- [ ] Implement minimum code to pass:
+- [x] Write failing test: `src/__tests__/state/simulator-state.test.ts` — verifica que `SimulatorState` almacena/recupera `lastInboundAt` y `mediaStore`, y que `persistence.ts` lee/escribe `state.json`
+- [x] Implement minimum code to pass:
   - `src/state/simulator-state.ts` — clase `SimulatorState` con métodos `recordInbound(phone, timestamp)`, `isWithin24hWindow(phone)`, `registerMedia(entry)`, `getMedia(mediaId)`
   - `src/state/persistence.ts` — funciones `loadState(filePath)` y `saveState(state, filePath)`, escritura periódica cada 10s
-- [ ] Refactor if needed
-- [ ] Mark completed checks in this RUNBOOK
+- [x] Refactor if needed
+- [x] Mark completed checks in this RUNBOOK
 - [ ] `git add . && git commit -m "step 2: simulator state + JSON persistence"` (all tests green, RUNBOOK updated)
 
 ---
