@@ -104,11 +104,11 @@ Cada step sigue el ciclo Red-Green-Refactor. Al completar cada sub-paso, marcar 
 
 ### Step 4: Webhook dispatcher con firma HMAC
 
-- [ ] Write failing test: `src/__tests__/webhooks/webhook-dispatcher.test.ts` — verifica que `dispatchWebhook(payload)` genera header `X-Hub-Signature-256` correcto con HMAC-SHA256, y que el payload enviado tiene la estructura Meta esperada
-- [ ] Implement minimum code to pass:
+- [x] Write failing test: `src/__tests__/webhooks/webhook-dispatcher.test.ts` — verifica que `dispatchWebhook(payload)` genera header `X-Hub-Signature-256` correcto con HMAC-SHA256, y que el payload enviado tiene la estructura Meta esperada
+- [x] Implement minimum code to pass:
   - `src/webhooks/webhook-dispatcher.ts` — función `dispatchWebhook(payload, callbackUrl, appSecret)` que hace POST con firma HMAC, retry con backoff (máx 3 intentos)
-- [ ] Refactor if needed
-- [ ] Mark completed checks in this RUNBOOK
+- [x] Refactor if needed
+- [x] Mark completed checks in this RUNBOOK
 - [ ] `git add . && git commit -m "step 4: webhook dispatcher con firma HMAC"` (all tests green, RUNBOOK updated)
 
 ---
