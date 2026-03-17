@@ -93,11 +93,11 @@ Cada step sigue el ciclo Red-Green-Refactor. Al completar cada sub-paso, marcar 
 
 ### Step 3: Templates hardcodeados + resolveTemplate
 
-- [ ] Write failing test: `src/__tests__/templates/templates.test.ts` — verifica que `resolveTemplate('reopen_conversation', ['Cristian'])` retorna el texto correcto, y que un template inexistente lanza error
-- [ ] Implement minimum code to pass:
+- [x] Write failing test: `src/__tests__/templates/templates.test.ts` — verifica que `resolveTemplate('reopen_conversation', ['Cristian'])` retorna el texto correcto, y que un template inexistente lanza error
+- [x] Implement minimum code to pass:
   - `src/templates/templates.ts` — array `TEMPLATES` con `reopen_conversation`, función `resolveTemplate(name, params)` que reemplaza `{{N}}`
-- [ ] Refactor if needed
-- [ ] Mark completed checks in this RUNBOOK
+- [x] Refactor if needed
+- [x] Mark completed checks in this RUNBOOK
 - [ ] `git add . && git commit -m "step 3: templates hardcodeados + resolveTemplate"` (all tests green, RUNBOOK updated)
 
 ---
