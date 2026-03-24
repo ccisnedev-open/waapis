@@ -2,6 +2,7 @@ import makeWASocket, {
   useMultiFileAuthState,
   DisconnectReason,
   Browsers,
+  fetchLatestBaileysVersion,
 } from '@whiskeysockets/baileys';
 import type { WASocket, BaileysEventMap, ConnectionState } from '@whiskeysockets/baileys';
 import type { Boom } from '@hapi/boom';
@@ -33,6 +34,7 @@ export class BaileysSession {
   private reconnectAttempts = 0;
   private readonly config: BaileysSessionConfig;
   private readonly logger = pino({ level: 'silent' });
+  private readonly appLogger = pino({ transport: { target: 'pino-pretty' } });
 
   constructor(config: BaileysSessionConfig) {
     this.config = config;
@@ -40,12 +42,22 @@ export class BaileysSession {
 
   /** Establishes the Baileys WebSocket connection and starts listening for events. */
   async connect(): Promise<void> {
+    // Clean up any existing socket before creating a new one
+    if (this.sock) {
+      try { this.sock.ev.removeAllListeners(); await this.sock.end(undefined); } catch { /* ignore */ }
+      this.sock = null;
+    }
+
     const { state, saveCreds } = await useMultiFileAuthState(this.config.authDir);
     this.saveCreds = saveCreds;
 
+    // Fetch the latest WhatsApp Web version to avoid 405 Connection Failure
+    const { version } = await fetchLatestBaileysVersion();
+    this.appLogger.info('Using WhatsApp Web version: %s', version.join('.'));
+
     this.sock = makeWASocket({
       auth: state,
-      printQRInTerminal: false,
+      version,
       browser: Browsers.ubuntu('HELP Simulator'),
       logger: this.logger,
     });
@@ -69,10 +81,14 @@ export class BaileysSession {
   /** Closes the session. If clearAuth is true, deletes stored credentials. */
   async disconnect(clearAuth = false): Promise<void> {
     if (this.sock) {
+      this.sock.ev.removeAllListeners();
       if (clearAuth) {
         try { await this.sock.logout(); } catch { /* already disconnected */ }
+        // Remove auth folder so next connect() generates a fresh QR
+        const { rmSync } = await import('node:fs');
+        try { rmSync(this.config.authDir, { recursive: true, force: true }); } catch { /* ignore */ }
       } else {
-        await this.sock.end(undefined);
+        try { await this.sock.end(undefined); } catch { /* ignore */ }
       }
     }
     this.sock = null;
@@ -135,6 +151,7 @@ export class BaileysSession {
     if (qr) {
       this.qrCode = qr;
       this.connected = false;
+      this.appLogger.info('QR code received — open http://localhost:3001/dashboard to scan');
     }
 
     if (connection === 'open') {
@@ -142,19 +159,31 @@ export class BaileysSession {
       this.qrCode = undefined;
       this.reconnectAttempts = 0;
       this.phone = this.sock?.user?.id?.replace(/@.*/, '').replace(/:.*/, '');
+      this.appLogger.info('WhatsApp connected — phone: %s', this.phone);
     }
 
     if (connection === 'close') {
       this.connected = false;
-      this.qrCode = undefined;
 
-      const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
+      const error = lastDisconnect?.error;
+      const statusCode = (error as Boom)?.output?.statusCode;
       const isLoggedOut = statusCode === DisconnectReason.loggedOut;
+
+      this.appLogger.error('Connection closed — statusCode=%d error=%s', statusCode, error?.message ?? 'unknown');
+
+      if (isLoggedOut) {
+        this.qrCode = undefined;
+      }
 
       if (!isLoggedOut && this.reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
         this.reconnectAttempts++;
-        const backoffMs = Math.pow(2, this.reconnectAttempts) * 1000;
+        const backoffMs = Math.min(Math.pow(2, this.reconnectAttempts) * 1000, 30_000);
+        this.appLogger.info('Connection closed — reconnecting in %dms (attempt %d/%d)', backoffMs, this.reconnectAttempts, MAX_RECONNECT_ATTEMPTS);
         setTimeout(() => this.connect(), backoffMs);
+      } else if (isLoggedOut) {
+        this.appLogger.warn('Logged out — scan QR again via dashboard');
+      } else {
+        this.appLogger.error('Max reconnection attempts reached (%d)', MAX_RECONNECT_ATTEMPTS);
       }
     }
   }

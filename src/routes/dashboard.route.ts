@@ -56,6 +56,7 @@ export function createDashboardRouter(session: DashboardSession): Router {
 
   // ── Reconnect ──
   router.post('/api/session/reconnect', async (_req, res) => {
+    await session.disconnect(true);
     await session.connect();
     res.json({ ok: true });
   });

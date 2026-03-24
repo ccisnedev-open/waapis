@@ -27,6 +27,7 @@ vi.mock('@whiskeysockets/baileys', () => {
     })),
     DisconnectReason: { loggedOut: 401 },
     Browsers: { ubuntu: (name: string) => [name, 'Ubuntu', '22.04'] },
+    fetchLatestBaileysVersion: vi.fn(async () => ({ version: [2, 3000, 1035194821], isLatest: true })),
     makeWASocket: vi.fn(() => {
       const sock = new MockSocket();
       setTimeout(() => {
