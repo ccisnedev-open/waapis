@@ -10,6 +10,8 @@ dist/
 
 # Environment
 .env
+.env.production
+.env.production.*
 
 # Baileys session credentials
 auth_info_baileys/

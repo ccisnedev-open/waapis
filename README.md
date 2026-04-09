@@ -35,6 +35,10 @@ npm install
 cp .env.example .env
 # Editar .env con tus valores
 
+# Matar si hay algo en :3001
+Get-NetTCPConnection -LocalPort 3001 -ErrorAction SilentlyContinue |
+  ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
+
 # 3. Iniciar en modo desarrollo
 npm run dev
 

@@ -1,0 +1,45 @@
+services:
+  wa-api:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+    container_name: wa-api
+    restart: always
+    env_file: ../.env.production
+    volumes:
+      - ../auth_info_baileys:/app/auth_info_baileys
+      - ../media:/app/media
+    ports:
+      - "3001:3001"
+    networks:
+      - wa-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - wa-net
+    depends_on:
+      wa-api:
+        condition: service_healthy
+
+networks:
+  wa-net:
+
+volumes:
+  caddy_data:
+  caddy_config:

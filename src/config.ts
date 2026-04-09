@@ -10,9 +10,9 @@ export interface SimulatorConfig {
   phoneNumberId: string;
   wabaId: string;
   accessToken: string;
-  callbackUrl: string;
-  verifyToken: string;
-  appSecret: string;
+  callbackUrl: string | undefined;
+  verifyToken: string | undefined;
+  appSecret: string | undefined;
   mediaDir: string;
   mediaMaxSizeMb: number;
 }
@@ -36,9 +36,9 @@ export function loadConfig(): SimulatorConfig {
     phoneNumberId: requireEnv('PHONE_NUMBER_ID'),
     wabaId: requireEnv('WABA_ID'),
     accessToken: requireEnv('ACCESS_TOKEN'),
-    callbackUrl: requireEnv('CALLBACK_URL'),
-    verifyToken: requireEnv('VERIFY_TOKEN'),
-    appSecret: requireEnv('APP_SECRET'),
+    callbackUrl: process.env['CALLBACK_URL'] || undefined,
+    verifyToken: process.env['VERIFY_TOKEN'] || undefined,
+    appSecret: process.env['APP_SECRET'] || undefined,
     mediaDir: process.env['MEDIA_DIR'] ?? './media',
     mediaMaxSizeMb: parseInt(process.env['MEDIA_MAX_SIZE_MB'] ?? '100', 10),
   };

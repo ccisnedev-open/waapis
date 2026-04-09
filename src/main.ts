@@ -30,6 +30,8 @@ const session = new BaileysSession({
     try {
       const payload = normalizeInboundMessage(msg, {
         phoneNumberId: config.phoneNumberId,
+        displayPhoneNumber: config.phoneNumber,
+        wabaId: config.wabaId,
       });
 
       // Record inbound for 24h window tracking
@@ -41,8 +43,10 @@ const session = new BaileysSession({
       // Eager media download: if the message has media, download and register it
       // (In a real Baileys session, we'd use downloadMediaMessage here)
 
-      await dispatchWebhook(payload, config.callbackUrl, config.appSecret);
-      logger.info('Webhook dispatched for message from %s', from);
+      if (config.callbackUrl && config.appSecret) {
+        await dispatchWebhook(payload, config.callbackUrl, config.appSecret);
+        logger.info('Webhook dispatched for message from %s', from);
+      }
     } catch (err) {
       logger.error(err, 'Failed to process inbound message');
     }

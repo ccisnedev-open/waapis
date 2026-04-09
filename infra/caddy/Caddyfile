@@ -1,0 +1,14 @@
+wa-api-s1.cacsi.dev {
+	# ── Bloquear dashboard y session management ──
+	handle /dashboard* {
+		respond 403
+	}
+	handle /api/session/* {
+		respond 403
+	}
+
+	# ── Proxy todo lo demás a wa_api ──
+	handle {
+		reverse_proxy wa-api:3001
+	}
+}

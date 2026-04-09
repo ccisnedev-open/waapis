@@ -24,7 +24,9 @@ export function createApp(
 
   // ── Routes (order matters: specific paths before parameterized catch-alls) ──
   app.use('/health', createHealthRouter(session.asStatusProvider()));
-  app.use('/webhook', createWebhookRouter(config.verifyToken));
+  if (config.verifyToken) {
+    app.use('/webhook', createWebhookRouter(config.verifyToken));
+  }
   app.use('/', createDashboardRouter(session));
   app.use('/', createTemplatesRouter(config.accessToken));
   app.use('/', createMessagesRouter(config.accessToken, state, session.asMessageSender()));

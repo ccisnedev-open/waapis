@@ -15,7 +15,7 @@ export function createMediaRouter(accessToken: string, state: SimulatorState): R
 
   // Binary download — must be registered BEFORE the :mediaId catch-all
   router.get('/media/download/:mediaId', authMiddleware, (req, res) => {
-    const entry = state.getMedia(req.params.mediaId);
+    const entry = state.getMedia(req.params.mediaId as string);
 
     if (!entry || !existsSync(entry.localPath)) {
       res.status(404).json({ error: { message: 'Media not found', code: 404 } });
@@ -29,7 +29,7 @@ export function createMediaRouter(accessToken: string, state: SimulatorState): R
 
   // Metadata — returns the download URL + file info
   router.get('/:mediaId', authMiddleware, (req, res) => {
-    const entry = state.getMedia(req.params.mediaId);
+    const entry = state.getMedia(req.params.mediaId as string);
 
     if (!entry) {
       res.status(404).json({ error: { message: 'Media not found', code: 404 } });

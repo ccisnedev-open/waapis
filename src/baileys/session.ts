@@ -44,7 +44,12 @@ export class BaileysSession {
   async connect(): Promise<void> {
     // Clean up any existing socket before creating a new one
     if (this.sock) {
-      try { this.sock.ev.removeAllListeners(); await this.sock.end(undefined); } catch { /* ignore */ }
+      try {
+        this.sock.ev.removeAllListeners('connection.update');
+        this.sock.ev.removeAllListeners('creds.update');
+        this.sock.ev.removeAllListeners('messages.upsert');
+        await this.sock.end(undefined);
+      } catch { /* ignore */ }
       this.sock = null;
     }
 
@@ -81,7 +86,9 @@ export class BaileysSession {
   /** Closes the session. If clearAuth is true, deletes stored credentials. */
   async disconnect(clearAuth = false): Promise<void> {
     if (this.sock) {
-      this.sock.ev.removeAllListeners();
+      this.sock.ev.removeAllListeners('connection.update');
+      this.sock.ev.removeAllListeners('creds.update');
+      this.sock.ev.removeAllListeners('messages.upsert');
       if (clearAuth) {
         try { await this.sock.logout(); } catch { /* already disconnected */ }
         // Remove auth folder so next connect() generates a fresh QR
