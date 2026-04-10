@@ -170,8 +170,9 @@ export function normalizeInboundMessage(
   waMessage: any,
   metadata: InboundMetadata,
   mediaId?: string,
+  resolvedFrom?: string,
 ): MetaWebhookPayload {
-  const from = phoneFromJid(waMessage.key.remoteJid);
+  const from = resolvedFrom ?? phoneFromJid(waMessage.key.remoteJid);
   const timestamp = String(
     typeof waMessage.messageTimestamp === 'number'
       ? waMessage.messageTimestamp

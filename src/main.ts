@@ -2,6 +2,8 @@ import { loadConfig } from './config.js';
 import { loadState, saveState } from './state/persistence.js';
 import { BaileysSession } from './baileys/session.js';
 import { normalizeInboundMessage } from './baileys/event-normalizer.js';
+import { resolvePhoneFromJid } from './baileys/jid-resolver.js';
+import type { LidResolver } from './baileys/jid-resolver.js';
 import { dispatchWebhook } from './webhooks/webhook-dispatcher.js';
 import { registerMedia } from './media/media-store.js';
 import { createApp } from './app.js';
@@ -26,19 +28,20 @@ const persistInterval = setInterval(() => {
 // ── 3. Create Baileys session ──
 const session = new BaileysSession({
   authDir: './auth_info_baileys',
-  onInboundMessage: async (msg: any) => {
+  onInboundMessage: async (msg: any, lidResolver: LidResolver | null) => {
     try {
+      const rawJid = msg.key?.remoteJid;
+      const from = await resolvePhoneFromJid(rawJid, lidResolver);
+
+      if (from) {
+        state.recordInbound(from, Date.now());
+      }
+
       const payload = normalizeInboundMessage(msg, {
         phoneNumberId: config.phoneNumberId,
         displayPhoneNumber: config.phoneNumber,
         wabaId: config.wabaId,
-      });
-
-      // Record inbound for 24h window tracking
-      const from = msg.key?.remoteJid?.replace(/@.*/, '');
-      if (from) {
-        state.recordInbound(from, Date.now());
-      }
+      }, undefined, from);
 
       // Eager media download: if the message has media, download and register it
       // (In a real Baileys session, we'd use downloadMediaMessage here)

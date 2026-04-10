@@ -1,6 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EventEmitter } from 'node:events';
 import { BaileysSession } from '../../baileys/session.js';
+import type { LidResolver } from '../../baileys/jid-resolver.js';
+
+const mockLidMapping = {
+  getPNForLID: vi.fn(async () => null),
+  storeLIDPNMappings: vi.fn(),
+  getLIDForPN: vi.fn(async () => null),
+  getLIDsForPNs: vi.fn(async () => null),
+};
 
 class MockSocket {
   user = { id: '51999000000@s.whatsapp.net', name: 'Test Simulator' };
@@ -8,6 +16,7 @@ class MockSocket {
   logout = vi.fn(async () => {});
   sendMessage = vi.fn(async () => ({ key: { id: 'mock_msg_id' }, status: 1 }));
   sendPresenceUpdate = vi.fn(async () => {});
+  signalRepository = { lidMapping: mockLidMapping };
   ev = new EventEmitter();
 }
 
@@ -91,5 +100,61 @@ describe('BaileysSession', () => {
 
     session['emitConnectionUpdate']({ connection: 'open' });
     expect(session.currentQR()).toBeUndefined();
+  });
+
+  it('passes lidMapping as second argument to onInboundMessage', async () => {
+    const onInbound = vi.fn();
+    const sessionWithSpy = new BaileysSession({
+      authDir: './test_auth',
+      onInboundMessage: onInbound,
+      onStatusUpdate: vi.fn(),
+    });
+
+    await sessionWithSpy.connect();
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    // Simulate an inbound message via the socket's messages.upsert event
+    const sock = sessionWithSpy.socket()!;
+    (sock as any).ev.emit('messages.upsert', {
+      messages: [
+        { key: { remoteJid: '51999000001@s.whatsapp.net', fromMe: false, id: 'test1' }, message: {} },
+      ],
+      type: 'notify',
+    });
+
+    expect(onInbound).toHaveBeenCalledOnce();
+    expect(onInbound).toHaveBeenCalledWith(
+      expect.objectContaining({ key: expect.objectContaining({ id: 'test1' }) }),
+      expect.objectContaining({ getPNForLID: expect.any(Function) }),
+    );
+  });
+
+  it('passes null as lidResolver when socket has no signalRepository', async () => {
+    const onInbound = vi.fn();
+    const sessionWithSpy = new BaileysSession({
+      authDir: './test_auth',
+      onInboundMessage: onInbound,
+      onStatusUpdate: vi.fn(),
+    });
+
+    await sessionWithSpy.connect();
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    // Remove signalRepository to simulate missing property
+    const sock = sessionWithSpy.socket()!;
+    delete (sock as any).signalRepository;
+
+    (sock as any).ev.emit('messages.upsert', {
+      messages: [
+        { key: { remoteJid: '51999000001@s.whatsapp.net', fromMe: false, id: 'test2' }, message: {} },
+      ],
+      type: 'notify',
+    });
+
+    expect(onInbound).toHaveBeenCalledOnce();
+    expect(onInbound).toHaveBeenCalledWith(
+      expect.objectContaining({ key: expect.objectContaining({ id: 'test2' }) }),
+      null,
+    );
   });
 });

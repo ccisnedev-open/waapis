@@ -182,4 +182,40 @@ describe('event-normalizer', () => {
       expect(status.conversation).toBeDefined();
     });
   });
+
+  describe('normalizeInboundMessage — resolvedFrom override', () => {
+    const lidMsg = {
+      key: {
+        remoteJid: '48915483205670@lid',
+        fromMe: false,
+        id: 'LID_MSG_001',
+      },
+      messageTimestamp: 1710000000,
+      pushName: 'Contacto LID',
+      message: { conversation: 'Hola desde LID' },
+    };
+
+    it('uses resolvedFrom instead of remoteJid when provided', () => {
+      const payload = normalizeInboundMessage(lidMsg as any, METADATA, undefined, '51903429745');
+      const value = payload.entry[0].changes[0].value;
+
+      expect(value.contacts[0].wa_id).toBe('51903429745');
+      expect(value.messages[0].from).toBe('51903429745');
+    });
+
+    it('falls back to remoteJid extraction when resolvedFrom is undefined', () => {
+      const phoneMsg = {
+        key: { remoteJid: '51999000001@s.whatsapp.net', fromMe: false, id: 'PN_MSG_001' },
+        messageTimestamp: 1710000000,
+        pushName: 'Contacto PN',
+        message: { conversation: 'Hola normal' },
+      };
+
+      const payload = normalizeInboundMessage(phoneMsg as any, METADATA);
+      const value = payload.entry[0].changes[0].value;
+
+      expect(value.contacts[0].wa_id).toBe('51999000001');
+      expect(value.messages[0].from).toBe('51999000001');
+    });
+  });
 });

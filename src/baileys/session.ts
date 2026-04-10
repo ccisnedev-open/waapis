@@ -9,10 +9,11 @@ import type { Boom } from '@hapi/boom';
 import pino from 'pino';
 import type { SessionStatusProvider } from '../routes/health.route.js';
 import type { MessageSender } from '../routes/messages.route.js';
+import type { LidResolver } from './jid-resolver.js';
 
 export interface BaileysSessionConfig {
   authDir: string;
-  onInboundMessage: (message: any) => void;
+  onInboundMessage: (message: any, lidResolver: LidResolver | null) => void;
   onStatusUpdate: (update: any) => void;
 }
 
@@ -76,9 +77,11 @@ export class BaileysSession {
     });
 
     this.sock.ev.on('messages.upsert', (event: BaileysEventMap['messages.upsert']) => {
+      const lidResolver: LidResolver | null =
+        (this.sock as any)?.signalRepository?.lidMapping ?? null;
       for (const msg of event.messages) {
         if (msg.key.fromMe) continue;
-        this.config.onInboundMessage(msg);
+        this.config.onInboundMessage(msg, lidResolver);
       }
     });
   }
